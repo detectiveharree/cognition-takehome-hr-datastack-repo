@@ -23,6 +23,11 @@ function generateHistoricalData(symbol: string, days: number = 30) {
     const close = low + Math.random() * (high - low);
     const volume = Math.floor(20000000 + Math.random() * 80000000);
 
+    // Calculate VWAP (simplified mock calculation)
+    const vwap = parseFloat(((open + high + low + close) / 4).toFixed(2));
+    const changePct = parseFloat((((close - open) / open) * 100).toFixed(2));
+    const splitCoefficient = 1.0;
+    
     data.push({
       date: date.toISOString().split("T")[0],
       open: parseFloat(open.toFixed(2)),
@@ -31,6 +36,9 @@ function generateHistoricalData(symbol: string, days: number = 30) {
       close: parseFloat(close.toFixed(2)),
       adjustedClose: parseFloat(close.toFixed(2)),
       volume,
+      vwap,
+      changePct,
+      splitCoefficient,
     });
   }
 

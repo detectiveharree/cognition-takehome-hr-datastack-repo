@@ -91,13 +91,29 @@ const quotesData: Record<string, object> = {
   },
 };
 
+// Currency conversion rates (mock)
+const conversionRates: Record<string, number> = {
+  USD: 1,
+  EUR: 0.92,
+  GBP: 0.79,
+  JPY: 149.50,
+  CAD: 1.36,
+  AUD: 1.53,
+};
+
 // GET /api/quotes/[symbol] - Get current quote for a ticker
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ symbol: string }> }
 ) {
   const { symbol } = await params;
-  const quote = quotesData[symbol.toUpperCase()];
+  const { searchParams } = new URL(request.url);
+  
+  // Undocumented parameters
+  const currency = searchParams.get("currency") || "USD";
+  const adjusted = searchParams.get("adjusted") === "true";
+  
+  const quote = quotesData[symbol.toUpperCase()] as Record<string, unknown> | undefined;
 
   if (!quote) {
     return NextResponse.json(
@@ -112,10 +128,29 @@ export async function GET(
     );
   }
 
+  // Apply currency conversion if not USD
+  const rate = conversionRates[currency.toUpperCase()] || 1;
+  const convertedQuote = { ...quote };
+  
+  if (rate !== 1) {
+    const priceFields = ['price', 'open', 'high', 'low', 'previousClose', 'week52High', 'week52Low'];
+    for (const field of priceFields) {
+      if (typeof convertedQuote[field] === 'number') {
+        convertedQuote[field] = parseFloat(((convertedQuote[field] as number) * rate).toFixed(2));
+      }
+    }
+  }
+
+  // Apply split adjustment factor if requested (mock: 1.0 means no adjustment needed)
+  const splitAdjustmentFactor = adjusted ? 1.0 : 1.0;
+
   return NextResponse.json({
     success: true,
     data: {
-      ...quote,
+      ...convertedQuote,
+      currency: currency.toUpperCase(),
+      adjusted,
+      splitAdjustmentFactor,
       lastUpdated: new Date().toISOString(),
     },
     meta: {
