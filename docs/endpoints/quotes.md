@@ -14,9 +14,11 @@ Returns the current quote for a specific symbol.
 
 #### Parameters
 
-| Parameter | Type   | Required | Description                          |
-|-----------|--------|----------|--------------------------------------|
-| `symbol`  | string | Yes      | Stock ticker symbol (e.g., `AAPL`, `GOOGL`) |
+| Parameter  | Type   | Required | Default | Description                          |
+|------------|--------|----------|---------|--------------------------------------|
+| `symbol`   | string | Yes      | -       | Stock ticker symbol (e.g., `AAPL`, `GOOGL`) |
+| `currency` | string | No       | `USD`   | Currency for price conversion. Supported: `USD`, `EUR`, `GBP`, `JPY`, `CAD`, `AUD` |
+| `adjusted` | string | No       | `false` | Set to `true` to request split-adjusted data |
 
 #### Response
 
@@ -44,6 +46,8 @@ Returns the current quote for a specific symbol.
     "week52Low": 143.90,
     "dividendYield": 0.51,
     "beta": 1.28,
+    "adjusted": false,
+    "splitAdjustmentFactor": 1.0,
     "lastUpdated": "2024-01-15T14:30:00Z"
   },
   "meta": {
@@ -77,6 +81,8 @@ Returns the current quote for a specific symbol.
 | `week52Low`     | number  | 52-week low price                              |
 | `dividendYield` | number  | Annual dividend yield percentage               |
 | `beta`          | number  | Stock's beta coefficient                       |
+| `adjusted`      | boolean | Whether split-adjusted data was requested      |
+| `splitAdjustmentFactor` | number | Split adjustment factor (1.0 when no adjustment) |
 | `lastUpdated`   | string  | Timestamp of last update                       |
 
 ## Error Codes
@@ -96,16 +102,21 @@ Returns the current quote for a specific symbol.
 ## Example Usage
 
 ```bash
+# Get quote in USD (default)
 curl -X GET "https://api.datastack.io/api/quotes/AAPL" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+
+# Get quote converted to EUR with split adjustment
+curl -X GET "https://api.datastack.io/api/quotes/AAPL?currency=EUR&adjusted=true" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 ```javascript
-const response = await fetch('https://api.datastack.io/api/quotes/AAPL', {
+const response = await fetch('https://api.datastack.io/api/quotes/AAPL?currency=GBP', {
   headers: {
     'Authorization': 'Bearer YOUR_API_KEY'
   }
 });
 const data = await response.json();
-console.log(data.data.price); // 178.52
+console.log(data.data.price); // Price in GBP
 ```
