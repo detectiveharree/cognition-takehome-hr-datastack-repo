@@ -14,9 +14,11 @@ Returns the current quote for a specific symbol.
 
 #### Parameters
 
-| Parameter | Type   | Required | Description                          |
-|-----------|--------|----------|--------------------------------------|
-| `symbol`  | string | Yes      | Stock ticker symbol (e.g., `AAPL`, `GOOGL`) |
+| Parameter  | Type   | Required | Default | Description                          |
+|------------|--------|----------|---------|--------------------------------------|
+| `symbol`   | string | Yes      | -       | Stock ticker symbol (e.g., `AAPL`, `GOOGL`) |
+| `currency` | string | No       | `USD`   | Target currency for price conversion. Supported: `USD`, `EUR`, `GBP`, `JPY`, `CAD`, `AUD` |
+| `adjusted` | string | No       | `false` | Set to `true` to apply split adjustment factor |
 
 #### Response
 
@@ -44,6 +46,9 @@ Returns the current quote for a specific symbol.
     "week52Low": 143.90,
     "dividendYield": 0.51,
     "beta": 1.28,
+    "currency": "USD",
+    "adjusted": false,
+    "splitAdjustmentFactor": 1.0,
     "lastUpdated": "2024-01-15T14:30:00Z"
   },
   "meta": {
@@ -77,6 +82,9 @@ Returns the current quote for a specific symbol.
 | `week52Low`     | number  | 52-week low price                              |
 | `dividendYield` | number  | Annual dividend yield percentage               |
 | `beta`          | number  | Stock's beta coefficient                       |
+| `currency`      | string  | Currency of the returned prices (matches the `currency` query parameter) |
+| `adjusted`      | boolean | Whether split adjustment was applied           |
+| `splitAdjustmentFactor` | number | Split adjustment factor applied to prices (1.0 when no adjustment) |
 | `lastUpdated`   | string  | Timestamp of last update                       |
 
 ## Error Codes
@@ -87,6 +95,23 @@ Returns the current quote for a specific symbol.
 | `INVALID_SYMBOL`  | The symbol format is invalid             |
 | `MARKET_CLOSED`   | Real-time data unavailable, market closed|
 
+## Currency Conversion
+
+When the `currency` parameter is provided, the following price fields are converted from USD to the target currency: `price`, `open`, `high`, `low`, `previousClose`, `week52High`, `week52Low`.
+
+Supported currencies:
+
+| Currency | Description        |
+|----------|--------------------|
+| `USD`    | US Dollar (default)|
+| `EUR`    | Euro               |
+| `GBP`    | British Pound      |
+| `JPY`    | Japanese Yen       |
+| `CAD`    | Canadian Dollar    |
+| `AUD`    | Australian Dollar  |
+
+Fields such as `change`, `changePercent`, `volume`, `avgVolume`, `marketCap`, `pe`, `eps`, `dividendYield`, and `beta` are **not** converted.
+
 ## Rate Limits
 
 - **Free tier**: 5 requests per second
@@ -96,16 +121,26 @@ Returns the current quote for a specific symbol.
 ## Example Usage
 
 ```bash
+# Basic quote
 curl -X GET "https://api.datastack.io/api/quotes/AAPL" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+
+# Quote with currency conversion
+curl -X GET "https://api.datastack.io/api/quotes/AAPL?currency=EUR" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+
+# Quote with split adjustment
+curl -X GET "https://api.datastack.io/api/quotes/AAPL?adjusted=true" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 ```javascript
-const response = await fetch('https://api.datastack.io/api/quotes/AAPL', {
+const response = await fetch('https://api.datastack.io/api/quotes/AAPL?currency=EUR&adjusted=true', {
   headers: {
     'Authorization': 'Bearer YOUR_API_KEY'
   }
 });
 const data = await response.json();
-console.log(data.data.price); // 178.52
+console.log(data.data.price);    // price in EUR
+console.log(data.data.currency); // "EUR"
 ```
