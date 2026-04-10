@@ -37,7 +37,10 @@ Returns historical OHLCV (Open, High, Low, Close, Volume) data for a specific sy
         "low": 184.12,
         "close": 186.78,
         "adjustedClose": 186.78,
-        "volume": 54234567
+        "volume": 54234567,
+        "vwap": 185.90,
+        "changePct": 0.84,
+        "splitCoefficient": 1.0
       },
       {
         "date": "2024-01-03",
@@ -46,7 +49,10 @@ Returns historical OHLCV (Open, High, Low, Close, Volume) data for a specific sy
         "low": 185.67,
         "close": 187.45,
         "adjustedClose": 187.45,
-        "volume": 48765432
+        "volume": 48765432,
+        "vwap": 187.04,
+        "changePct": 0.29,
+        "splitCoefficient": 1.0
       }
     ]
   },
@@ -94,6 +100,9 @@ Returns historical OHLCV (Open, High, Low, Close, Volume) data for a specific sy
 | `close`        | number | Closing price                         |
 | `adjustedClose`| number | Adjusted closing price (for splits/dividends) |
 | `volume`       | number | Trading volume                        |
+| `vwap`         | number | Volume Weighted Average Price, calculated as the average of open, high, low, and close |
+| `changePct`    | number | Percentage change from open to close for the period |
+| `splitCoefficient` | number | Stock split coefficient (1.0 when no split occurred) |
 
 ## Example Usage
 
