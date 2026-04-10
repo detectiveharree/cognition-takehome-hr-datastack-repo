@@ -14,9 +14,11 @@ Returns the current quote for a specific symbol.
 
 #### Parameters
 
-| Parameter | Type   | Required | Description                          |
-|-----------|--------|----------|--------------------------------------|
-| `symbol`  | string | Yes      | Stock ticker symbol (e.g., `AAPL`, `GOOGL`) |
+| Parameter  | Type   | Required | Default | Description                                              |
+|------------|--------|----------|---------|----------------------------------------------------------|
+| `symbol`   | string | Yes      | -       | Stock ticker symbol (e.g., `AAPL`, `GOOGL`)              |
+| `currency` | string | No       | `USD`   | Convert prices to this currency (e.g., `EUR`, `GBP`, `JPY`, `CAD`, `AUD`) |
+| `adjusted` | boolean| No       | `false` | Whether to return split-adjusted prices                  |
 
 #### Response
 
@@ -44,6 +46,9 @@ Returns the current quote for a specific symbol.
     "week52Low": 143.90,
     "dividendYield": 0.51,
     "beta": 1.28,
+    "currency": "USD",
+    "adjusted": false,
+    "splitAdjustmentFactor": 1.0,
     "lastUpdated": "2024-01-15T14:30:00Z"
   },
   "meta": {
@@ -77,6 +82,9 @@ Returns the current quote for a specific symbol.
 | `week52Low`     | number  | 52-week low price                              |
 | `dividendYield` | number  | Annual dividend yield percentage               |
 | `beta`          | number  | Stock's beta coefficient                       |
+| `currency`      | string  | Currency of the quoted prices                  |
+| `adjusted`      | boolean | Whether split-adjusted prices are returned     |
+| `splitAdjustmentFactor` | number | Split adjustment factor (1.0 = no adjustment) |
 | `lastUpdated`   | string  | Timestamp of last update                       |
 
 ## Error Codes
@@ -84,8 +92,6 @@ Returns the current quote for a specific symbol.
 | Code              | Description                              |
 |-------------------|------------------------------------------|
 | `QUOTE_NOT_FOUND` | The requested symbol was not found       |
-| `INVALID_SYMBOL`  | The symbol format is invalid             |
-| `MARKET_CLOSED`   | Real-time data unavailable, market closed|
 
 ## Rate Limits
 

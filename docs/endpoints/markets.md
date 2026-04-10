@@ -110,6 +110,3 @@ Returns detailed information about a specific market.
 
 - `open` - Market is currently open for trading
 - `closed` - Market is closed
-- `pre-market` - Pre-market trading session
-- `after-hours` - After-hours trading session
-- `holiday` - Market is closed for a holiday

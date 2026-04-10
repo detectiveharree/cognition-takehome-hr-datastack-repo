@@ -37,7 +37,10 @@ Returns historical OHLCV (Open, High, Low, Close, Volume) data for a specific sy
         "low": 184.12,
         "close": 186.78,
         "adjustedClose": 186.78,
-        "volume": 54234567
+        "volume": 54234567,
+        "vwap": 185.90,
+        "changePct": 0.84,
+        "splitCoefficient": 1.0
       },
       {
         "date": "2024-01-03",
@@ -46,7 +49,10 @@ Returns historical OHLCV (Open, High, Low, Close, Volume) data for a specific sy
         "low": 185.67,
         "close": 187.45,
         "adjustedClose": 187.45,
-        "volume": 48765432
+        "volume": 48765432,
+        "vwap": 187.04,
+        "changePct": 0.29,
+        "splitCoefficient": 1.0
       }
     ]
   },
@@ -81,7 +87,6 @@ Returns historical OHLCV (Open, High, Low, Close, Volume) data for a specific sy
 | `6mo`   | 6 months       |
 | `1y`    | 1 year         |
 | `5y`    | 5 years        |
-| `max`   | Maximum available data |
 
 ## Response Fields
 
@@ -94,6 +99,9 @@ Returns historical OHLCV (Open, High, Low, Close, Volume) data for a specific sy
 | `close`        | number | Closing price                         |
 | `adjustedClose`| number | Adjusted closing price (for splits/dividends) |
 | `volume`       | number | Trading volume                        |
+| `vwap`         | number | Volume-weighted average price         |
+| `changePct`    | number | Percentage change from open to close  |
+| `splitCoefficient` | number | Split coefficient (1.0 = no split) |
 
 ## Example Usage
 
@@ -117,9 +125,11 @@ for candle in data['data']['prices']:
     print(f"{candle['date']}: {candle['close']}")
 ```
 
+## Available Symbols
+
+The following symbols are supported: `AAPL`, `GOOGL`, `MSFT`, `TSLA`, `AMZN`, `META`, `NVDA`
+
 ## Notes
 
-- Historical data is adjusted for stock splits and dividends by default
-- Intraday data (intervals < 1d) is only available for the past 60 days
-- Weekend and holiday dates are excluded from the response
-- All timestamps are in UTC
+- Weekend dates are excluded from the response
+- If an unrecognized `range` value is provided, it defaults to 1 month (30 days)
