@@ -29,7 +29,6 @@ Returns the current quote for a specific symbol.
     "symbol": "AAPL",
     "name": "Apple Inc.",
     "exchange": "NASDAQ",
-    "currency": "USD",
     "price": 178.52,
     "change": 2.34,
     "changePercent": 1.33,
@@ -65,7 +64,7 @@ Returns the current quote for a specific symbol.
 | `symbol`        | string  | Stock ticker symbol                            |
 | `name`          | string  | Company name                                   |
 | `exchange`      | string  | Exchange where the stock is listed             |
-| `currency`      | string  | Currency of the quoted prices                  |
+| `currency`      | string  | Currency of the quoted prices (reflects requested conversion currency) |
 | `price`         | number  | Current/last trade price                       |
 | `change`        | number  | Price change from previous close               |
 | `changePercent` | number  | Percentage change from previous close          |
@@ -82,7 +81,6 @@ Returns the current quote for a specific symbol.
 | `week52Low`     | number  | 52-week low price                              |
 | `dividendYield` | number  | Annual dividend yield percentage               |
 | `beta`          | number  | Stock's beta coefficient                       |
-| `currency`      | string  | Currency of the quoted prices (reflects requested currency) |
 | `adjusted`      | boolean | Whether split-adjusted data was requested      |
 | `splitAdjustmentFactor` | number | Split adjustment factor (1.0 = no adjustment) |
 | `lastUpdated`   | string  | Timestamp of last update                       |
