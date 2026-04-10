@@ -1,0 +1,308 @@
+name: Documentation Sync Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-docs:
+    name: Check Documentation Sync
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            **/*.ts
+            **/*.tsx
+            **/*.js
+            **/*.jsx
+            **/*.py
+            app/api/**/*
+            api/**/*
+            routes/**/*
+            src/api/**/*
+            src/routes/**/*
+
+      - name: Check if API files changed
+        id: api-check
+        run: |
+          # Check if any API-related files were changed
+          CHANGED="${{ steps.changed-files.outputs.all_changed_files }}"
+          if [ -z "$CHANGED" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "No API files changed, skipping documentation check"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "API files changed: $CHANGED"
+          fi
+
+      - name: Run Documentation Sync Check
+        if: steps.api-check.outputs.skip != 'true'
+        id: docs-check
+        env:
+          DEVIN_API_KEY: ${{ secrets.DEVIN_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          
+          # Check if DEVIN_API_KEY is set
+          if [ -z "$DEVIN_API_KEY" ]; then
+            echo "::error::DEVIN_API_KEY secret is not configured"
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+            {
+              echo "summary<<EOF_SUMMARY"
+              echo "DEVIN_API_KEY not configured - skipping check"
+              echo "EOF_SUMMARY"
+            } >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Get PR info
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO_OWNER="${{ github.repository_owner }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+          PR_BRANCH="${{ github.head_ref }}"
+          BASE_BRANCH="${{ github.base_ref }}"
+          
+          echo "Analyzing PR #$PR_NUMBER for documentation sync..."
+          echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
+          
+          # Build the list of changed files for the prompt
+          CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+          
+          # Create Devin session to analyze documentation
+          PROMPT=$(cat <<'EOF'
+          You are a documentation sync checker for a GitHub pull request.
+          
+          Repository: REPO_OWNER_PLACEHOLDER/REPO_NAME_PLACEHOLDER
+          PR Branch: PR_BRANCH_PLACEHOLDER
+          Base Branch: BASE_BRANCH_PLACEHOLDER
+          
+          The following files have been changed in this PR:
+          CHANGED_FILES_PLACEHOLDER
+          
+          Your task:
+          1. Clone the repository and checkout the PR branch
+          2. Analyze the changed files to understand what code changes were made
+          3. Check if any of these code changes affect API behavior, function signatures, configuration options, or any other user-facing functionality
+          4. Compare against the existing documentation in the /docs/ folder (if it exists) or README.md
+          5. Determine if the documentation needs to be updated to reflect these changes
+          
+          **IMPORTANT RULES:**
+          - Only flag documentation issues if the code changes introduce NEW behavior, parameters, responses, or remove existing functionality that IS documented
+          - Do NOT flag issues for:
+            - Internal refactoring that doesn't change external behavior
+            - Code style changes
+            - Test file changes
+            - Changes to files that aren't user-facing
+            - Documentation that was already out of sync before this PR
+          
+          **If documentation needs updating:**
+          1. Set needs_update to true
+          2. Create a NEW pull request with the documentation fixes
+          3. Title it: "docs: sync documentation for PR #PR_NUMBER_PLACEHOLDER"
+          4. In the PR description, reference the original PR
+          5. Return the PR URL in pr_url
+          
+          **If documentation is in sync:**
+          1. Set needs_update to false
+          2. Provide a brief summary confirming docs are in sync
+          
+          Return your analysis as structured JSON.
+          EOF
+          )
+          
+          # Replace placeholders
+          PROMPT="${PROMPT//REPO_OWNER_PLACEHOLDER/$REPO_OWNER}"
+          PROMPT="${PROMPT//REPO_NAME_PLACEHOLDER/$REPO_NAME}"
+          PROMPT="${PROMPT//PR_BRANCH_PLACEHOLDER/$PR_BRANCH}"
+          PROMPT="${PROMPT//BASE_BRANCH_PLACEHOLDER/$BASE_BRANCH}"
+          PROMPT="${PROMPT//CHANGED_FILES_PLACEHOLDER/$CHANGED_FILES}"
+          PROMPT="${PROMPT//PR_NUMBER_PLACEHOLDER/$PR_NUMBER}"
+          
+          # Define structured output schema
+          SCHEMA='{
+            "type": "object",
+            "properties": {
+              "needs_update": {
+                "type": "boolean",
+                "description": "Whether the documentation needs to be updated based on the PR changes"
+              },
+              "summary": {
+                "type": "string",
+                "description": "Brief summary of the analysis"
+              },
+              "pr_url": {
+                "type": "string",
+                "description": "URL of the documentation PR if one was created"
+              },
+              "changes_detected": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "file": { "type": "string" },
+                    "change_type": { "type": "string" },
+                    "documentation_impact": { "type": "string" }
+                  }
+                },
+                "description": "List of changes detected and their documentation impact"
+              }
+            },
+            "required": ["needs_update", "summary"]
+          }'
+          
+          # Create Devin session
+          echo "Creating Devin session..."
+          RESPONSE=$(curl -s -X POST "https://api.devin.ai/v1/sessions" \
+            -H "Authorization: Bearer $DEVIN_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n \
+              --arg prompt "$PROMPT" \
+              --argjson schema "$SCHEMA" \
+              '{
+                prompt: $prompt,
+                structured_output_schema: $schema,
+                title: "Docs Sync Check: PR #'"$PR_NUMBER"'",
+                tags: ["docs-sync", "github-action", "automated"]
+              }')")
+          
+          SESSION_ID=$(echo "$RESPONSE" | jq -r '.session_id')
+          SESSION_URL=$(echo "$RESPONSE" | jq -r '.url')
+          
+          if [ -z "$SESSION_ID" ] || [ "$SESSION_ID" = "null" ]; then
+            echo "Failed to create Devin session"
+            echo "$RESPONSE"
+            exit 1
+          fi
+          
+          echo "Devin session created: $SESSION_ID"
+          echo "Session URL: $SESSION_URL"
+          echo "session_url=$SESSION_URL" >> $GITHUB_OUTPUT
+          
+          # Poll for completion (max 30 minutes)
+          MAX_ATTEMPTS=180
+          ATTEMPT=0
+          
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            sleep 10
+            ATTEMPT=$((ATTEMPT + 1))
+            
+            STATUS_RESPONSE=$(curl -s -X GET "https://api.devin.ai/v1/sessions/$SESSION_ID" \
+              -H "Authorization: Bearer $DEVIN_API_KEY")
+            
+            STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status_enum')
+            echo "Attempt $ATTEMPT: Status = $STATUS"
+            
+            if [ "$STATUS" = "blocked" ] || [ "$STATUS" = "stopped" ] || [ "$STATUS" = "finished" ]; then
+              echo "Session completed with status: $STATUS"
+              
+              # Get structured output
+              STRUCTURED_OUTPUT=$(echo "$STATUS_RESPONSE" | jq -r '.structured_output // empty')
+              
+              if [ -n "$STRUCTURED_OUTPUT" ]; then
+                NEEDS_UPDATE=$(echo "$STRUCTURED_OUTPUT" | jq -r '.needs_update // false')
+                SUMMARY=$(echo "$STRUCTURED_OUTPUT" | jq -r '.summary // "No summary provided"' | tr '\n' ' ' | head -c 500)
+                PR_URL=$(echo "$STRUCTURED_OUTPUT" | jq -r '.pr_url // ""')
+                
+                echo "needs_update=$NEEDS_UPDATE" >> $GITHUB_OUTPUT
+                # Use delimiter for multi-line safe output
+                {
+                  echo "summary<<EOF_SUMMARY"
+                  echo "$SUMMARY"
+                  echo "EOF_SUMMARY"
+                } >> $GITHUB_OUTPUT
+                echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+                
+                if [ "$NEEDS_UPDATE" = "true" ] && [ -n "$PR_URL" ] && [ "$PR_URL" != "null" ]; then
+                  echo "Documentation PR created: $PR_URL"
+                fi
+              else
+                echo "No structured output received"
+                echo "needs_update=false" >> $GITHUB_OUTPUT
+                {
+                  echo "summary<<EOF_SUMMARY"
+                  echo "Analysis completed but no structured output received"
+                  echo "EOF_SUMMARY"
+                } >> $GITHUB_OUTPUT
+              fi
+              
+              break
+            fi
+            
+            if [ "$STATUS" = "failed" ]; then
+              echo "Devin session failed"
+              echo "needs_update=false" >> $GITHUB_OUTPUT
+              {
+                echo "summary<<EOF_SUMMARY"
+                echo "Devin session failed - manual review recommended"
+                echo "EOF_SUMMARY"
+              } >> $GITHUB_OUTPUT
+              break
+            fi
+          done
+          
+          if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+            echo "Timeout waiting for Devin session to complete"
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+            {
+              echo "summary<<EOF_SUMMARY"
+              echo "Timeout - manual review recommended"
+              echo "EOF_SUMMARY"
+            } >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post PR Comment
+        if: steps.api-check.outputs.skip != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const needsUpdate = '${{ steps.docs-check.outputs.needs_update }}' === 'true';
+            const summary = '${{ steps.docs-check.outputs.summary }}' || 'Analysis completed';
+            const prUrl = '${{ steps.docs-check.outputs.pr_url }}';
+            const sessionUrl = '${{ steps.docs-check.outputs.session_url }}';
+            
+            let body = '## 📚 Documentation Sync Check\n\n';
+            
+            if (needsUpdate) {
+              body += '⚠️ **Documentation updates needed**\n\n';
+              body += `${summary}\n\n`;
+              if (prUrl) {
+                body += `📝 A documentation PR has been created: ${prUrl}\n\n`;
+              }
+            } else {
+              body += '✅ **Documentation is in sync**\n\n';
+              body += `${summary}\n\n`;
+            }
+            
+            if (sessionUrl) {
+              body += `🔗 [View Devin Session](${sessionUrl})\n`;
+            }
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+      - name: Skip message
+        if: steps.api-check.outputs.skip == 'true'
+        run: |
+          echo "No API files were changed in this PR, skipping documentation check."
+          echo "✅ Documentation check skipped - no API changes detected"
