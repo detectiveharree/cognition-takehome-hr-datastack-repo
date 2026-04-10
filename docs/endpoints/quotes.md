@@ -14,9 +14,11 @@ Returns the current quote for a specific symbol.
 
 #### Parameters
 
-| Parameter | Type   | Required | Description                          |
-|-----------|--------|----------|--------------------------------------|
-| `symbol`  | string | Yes      | Stock ticker symbol (e.g., `AAPL`, `GOOGL`) |
+| Parameter  | Type   | Required | Default | Description                          |
+|------------|--------|----------|---------|--------------------------------------|
+| `symbol`   | string | Yes      | -       | Stock ticker symbol (e.g., `AAPL`, `GOOGL`) |
+| `currency` | string | No       | `USD`   | Currency for price conversion (e.g., `EUR`, `GBP`, `JPY`, `CAD`, `AUD`) |
+| `adjusted` | string | No       | `false` | Set to `true` to include split-adjusted data |
 
 #### Response
 
@@ -44,6 +46,9 @@ Returns the current quote for a specific symbol.
     "week52Low": 143.90,
     "dividendYield": 0.51,
     "beta": 1.28,
+    "currency": "USD",
+    "adjusted": false,
+    "splitAdjustmentFactor": 1.0,
     "lastUpdated": "2024-01-15T14:30:00Z"
   },
   "meta": {
@@ -77,6 +82,9 @@ Returns the current quote for a specific symbol.
 | `week52Low`     | number  | 52-week low price                              |
 | `dividendYield` | number  | Annual dividend yield percentage               |
 | `beta`          | number  | Stock's beta coefficient                       |
+| `currency`      | string  | Currency of the quoted prices (reflects requested currency) |
+| `adjusted`      | boolean | Whether split-adjusted data was requested      |
+| `splitAdjustmentFactor` | number | Split adjustment factor (1.0 = no adjustment) |
 | `lastUpdated`   | string  | Timestamp of last update                       |
 
 ## Error Codes
