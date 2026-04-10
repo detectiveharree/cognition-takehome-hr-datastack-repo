@@ -1,6 +1,6 @@
 # Forex API
 
-The Forex API provides real-time and historical foreign exchange rates for major and exotic currency pairs.
+The Forex API provides real-time foreign exchange rates for major currency pairs.
 
 ## Endpoints
 
@@ -65,41 +65,44 @@ Returns the current exchange rate for a currency pair.
 
 ## Available Currency Pairs
 
-### Major Pairs
-
-| Pair     | Description         |
-|----------|---------------------|
-| `EURUSD` | Euro / US Dollar    |
-| `GBPUSD` | British Pound / USD |
-| `USDJPY` | USD / Japanese Yen  |
-| `USDCHF` | USD / Swiss Franc   |
-| `AUDUSD` | Australian Dollar / USD |
-| `USDCAD` | USD / Canadian Dollar |
-| `NZDUSD` | New Zealand Dollar / USD |
-
-### Cross Pairs
-
-| Pair     | Description         |
-|----------|---------------------|
-| `EURGBP` | Euro / British Pound|
-| `EURJPY` | Euro / Japanese Yen |
-| `GBPJPY` | British Pound / Yen |
-| `AUDNZD` | AUD / NZD           |
+| Pair     | Description                   |
+|----------|-------------------------------|
+| `EURUSD` | Euro / US Dollar              |
+| `GBPUSD` | British Pound / US Dollar     |
+| `USDJPY` | US Dollar / Japanese Yen      |
+| `USDCHF` | US Dollar / Swiss Franc       |
+| `AUDUSD` | Australian Dollar / US Dollar |
+| `USDCAD` | US Dollar / Canadian Dollar   |
+| `NZDUSD` | New Zealand Dollar / US Dollar|
+| `EURGBP` | Euro / British Pound          |
 
 ## Pair Format
 
-The API accepts multiple formats for currency pairs:
+The API accepts multiple formats for currency pairs. Non-alphabetic characters are stripped and the input is uppercased:
 
 - `EURUSD` - concatenated (recommended)
 - `EUR/USD` - with slash
 - `EUR-USD` - with hyphen
 - `eur-usd` - case insensitive
 
+## Error Response
+
+If a pair is not found, the API returns a 404 response:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "PAIR_NOT_FOUND",
+    "message": "Exchange rate for pair 'CHFGBP' not found. Available pairs: EURUSD, GBPUSD, USDJPY, USDCHF, AUDUSD, USDCAD, NZDUSD, EURGBP"
+  }
+}
+```
+
 ## Example Usage
 
 ```bash
-curl -X GET "https://api.datastack.io/api/forex/EURUSD" \
-  -H "Authorization: Bearer YOUR_API_KEY"
+curl -X GET "https://api.datastack.io/api/forex/EURUSD"
 ```
 
 ```python
@@ -111,36 +114,11 @@ rates = {}
 
 for pair in pairs:
     response = requests.get(
-        f'https://api.datastack.io/api/forex/{pair}',
-        headers={'Authorization': 'Bearer YOUR_API_KEY'}
+        f'https://api.datastack.io/api/forex/{pair}'
     )
     data = response.json()
     rates[pair] = data['data']['rate']
 
 print(rates)
 # {'EURUSD': 1.0892, 'GBPUSD': 1.2734, 'USDJPY': 148.52}
-```
-
-## Currency Conversion
-
-To convert amounts between currencies:
-
-```javascript
-const amount = 1000; // EUR
-const rate = 1.0892; // EURUSD rate
-const converted = amount * rate; // 1089.20 USD
-```
-
-## Rate Limits
-
-- **Free tier**: 100 requests per day
-- **Pro tier**: 10,000 requests per day  
-- **Enterprise tier**: Unlimited with streaming
-
-## Historical Forex Data
-
-For historical forex data, use the historical API with forex symbols:
-
-```http
-GET /api/historical/EURUSD?range=1mo&interval=1d
 ```
