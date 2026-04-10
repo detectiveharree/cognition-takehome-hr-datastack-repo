@@ -77,14 +77,16 @@ Returns news articles related to a specific stock symbol.
 ## News Categories
 
 - `earnings` - Earnings reports and financial results
-- `mergers` - M&A activity
-- `analyst-ratings` - Analyst upgrades/downgrades
-- `product-launch` - New product announcements
-- `legal` - Legal and regulatory news
-- `management` - Executive changes
-- `dividends` - Dividend announcements
 - `technology` - Tech sector news
-- `macro` - Macroeconomic news
+- `product-launch` - New product announcements
+- `artificial-intelligence` - AI-related news
+- `legal` - Legal and regulatory news
+- `regulation` - Government regulation news
+- `cloud` - Cloud computing news
+- `enterprise` - Enterprise adoption news
+- `acquisitions` - M&A activity
+- `manufacturing` - Manufacturing and production news
+- `expansion` - Business expansion news
 
 ## Example Usage
 

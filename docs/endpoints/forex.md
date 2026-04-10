@@ -82,9 +82,6 @@ Returns the current exchange rate for a currency pair.
 | Pair     | Description         |
 |----------|---------------------|
 | `EURGBP` | Euro / British Pound|
-| `EURJPY` | Euro / Japanese Yen |
-| `GBPJPY` | British Pound / Yen |
-| `AUDNZD` | AUD / NZD           |
 
 ## Pair Format
 
