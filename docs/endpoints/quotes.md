@@ -14,9 +14,11 @@ Returns the current quote for a specific symbol.
 
 #### Parameters
 
-| Parameter | Type   | Required | Description                          |
-|-----------|--------|----------|--------------------------------------|
-| `symbol`  | string | Yes      | Stock ticker symbol (e.g., `AAPL`, `GOOGL`) |
+| Parameter  | Type   | Required | Default | Description                                      |
+|------------|--------|----------|---------|--------------------------------------------------|
+| `symbol`   | string | Yes      | -       | Stock ticker symbol (e.g., `AAPL`, `GOOGL`)      |
+| `currency` | string | No       | `USD`   | Currency for price conversion (`USD`, `EUR`, `GBP`, `JPY`, `CAD`, `AUD`) |
+| `adjusted` | string | No       | `false` | Set to `true` to apply split adjustment factor   |
 
 #### Response
 
@@ -28,6 +30,8 @@ Returns the current quote for a specific symbol.
     "name": "Apple Inc.",
     "exchange": "NASDAQ",
     "currency": "USD",
+    "adjusted": false,
+    "splitAdjustmentFactor": 1.0,
     "price": 178.52,
     "change": 2.34,
     "changePercent": 1.33,
@@ -77,6 +81,8 @@ Returns the current quote for a specific symbol.
 | `week52Low`     | number  | 52-week low price                              |
 | `dividendYield` | number  | Annual dividend yield percentage               |
 | `beta`          | number  | Stock's beta coefficient                       |
+| `adjusted`      | boolean | Whether split adjustment was applied           |
+| `splitAdjustmentFactor` | number | Split adjustment factor (1.0 = no adjustment) |
 | `lastUpdated`   | string  | Timestamp of last update                       |
 
 ## Error Codes
